@@ -1,55 +1,44 @@
-# Import necessary modules
-import socket  # Module for socket programming
-from Crypto.Cipher import ARC4  # Module for encryption using ARC4 cipher
+import socket
+from rc4 import RC4
 
-# Function to handle communication with a client
-def handle_client(client_socket, client_address, key):
-    # Create an RC4 cipher object with the shared key
-    cipher = ARC4.new(key)
+def handle_client(client_socket, client_address, rc4_key):
+    """
+    Handle communication with a client.
     
-    # Receive data from the client
+    Args:
+        client_socket (socket.socket): The socket object for communication with the client.
+        client_address (tuple): A tuple representing the client's address (host, port).
+        rc4_key (RC4): An instance of the RC4 class for encryption and decryption.
+    """
+    print(f"Connection from {client_address}")
     while True:
-        # Receive encrypted data from the client
-        encrypted_data = client_socket.recv(1024)
-        # If no data is received, break out of the loop
-        if not encrypted_data:
+        data = client_socket.recv(4096)
+        if not data:
+            print(f"Client {client_address} disconnected.")
             break
-        # Decrypt the received encrypted data using the RC4 cipher
-        decrypted_data = cipher.decrypt(encrypted_data)
-        
-        # Print both encrypted and decrypted messages
-        print(f"Received encrypted message from {client_address}: {encrypted_data}")
-        print(f"Decrypted message: {decrypted_data.decode()}")
-    
-    # Close the client socket
+        decrypted_data = rc4_key.decrypt(data)  # Decrypt the received data
+        print(f"Received from {client_address}: {decrypted_data.decode('utf-8')}")
+        response = input("Enter response: ")  # Process the decrypted message
+        encrypted_response = rc4_key.encrypt(response.encode('utf-8'))  # Encrypt the response
+        client_socket.send(encrypted_response)  # Send the encrypted response
     client_socket.close()
 
-# Main function to set up the server and handle incoming connections
 def main():
-    # Server configuration
-    server_host = 'localhost'  # Server hostname or IP address
-    server_port = 8888          # Server port number
-    key = b'shared_key'         # Shared key for encryption and decryption
+    host = "127.0.0.1"
+    port = 12345
 
-    # Create a new socket object for the server
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # Bind the server socket to the specified address and port
-    server_socket.bind((server_host, server_port))
-    # Set the server socket to listening mode, allowing it to accept incoming connections
+    server_socket.bind((host, port))
     server_socket.listen(5)
-    # Print a message indicating that the server is now listening
-    print(f"Server listening on {server_host}:{server_port}")
 
-    # Main loop to continuously accept incoming connections and handle them
+    print(f"Server listening on {host}:{port}")
+
+    key = b"SecretKey"
+    rc4_key = RC4(key)
+
     while True:
-        # Accept a new connection from a client, returning a new socket object and client address
         client_socket, client_address = server_socket.accept()
-        # Print a message indicating that a connection has been accepted from a client
-        print(f"Accepted connection from {client_address}")
-        # Call the handle_client function to handle communication with the client
-        handle_client(client_socket, client_address, key)
+        handle_client(client_socket, client_address, rc4_key)
 
-# Check if the script is being run directly
 if __name__ == "__main__":
-    # If so, call the main function to start the server
     main()
