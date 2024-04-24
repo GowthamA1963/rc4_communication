@@ -13,14 +13,18 @@ def main():
 
     while True:
         message = input("Enter message: ")
-        encrypted_message = rc4_key.encrypt(message.encode('utf-8'))  # Encrypt the message
+        encrypted_message = rc4_key.encrypt(message.encode('utf-8'))
+        
         print("Original message:", message)
         print("Encrypted message:", encrypted_message)
-        client_socket.send(encrypted_message)  # Send the encrypted message
+        
+        client_socket.send(encrypted_message)
 
         response = client_socket.recv(4096)
-        decrypted_response = rc4_key.decrypt(response)  # Decrypt the response
-        print("Decrypted response:", decrypted_response.decode('utf-8'))
+        decrypted_response = rc4_key.decrypt(response)
+        
+        decrypted_hex_response = " ".join([format(byte, "02x") for byte in decrypted_response])
+        print("Decrypted response:", decrypted_hex_response.upper())
 
 if __name__ == "__main__":
     main()
